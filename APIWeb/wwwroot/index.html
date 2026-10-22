@@ -1,0 +1,194 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Gestión de Productos - APIWeb</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script>
+                if (!localStorage.getItem("authToken")) {
+                    window.location.href = "login.html";
+                }
+    </script>
+</head>
+<body>
+    <nav class="navbar navbar-dark bg-dark mb-4">
+        <div class="container-fluid">
+            <span class="navbar-brand mb-0 h1">Sistema de Productos</span>
+            <button class="btn btn-outline-danger btn-sm" onclick="cerrarSesion()">Cerrar Sesión</button>
+        </div>
+    </nav>
+
+    <form class="container needs-validation" novalidate>
+        <h2 class="mb-4">Producto</h2>
+        <div class="mb-3">
+            <label for="ProductName" class="form-label">Nombre del Producto *</label>
+            <input type="text" class="form-control" id="ProductName" name="ProductName" required maxlength="40">
+            <div class="invalid-feedback">Por favor, ingresa el nombre del producto.</div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label for="SupplierId" class="form-label">Proveedor</label>
+                <select class="form-select" id="SupplierId" name="SupplierId">
+                    <option value="" selected>Selecciona un proveedor...</option>
+                </select>
+            </div>
+
+            <div class="col-md-6 mb-3">
+                <label for="CategoryId" class="form-label">Categoría</label>
+                <select class="form-select" id="CategoryId" name="CategoryId">
+                    <option value="" selected>Selecciona una categoría...</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label for="QuantityPerUnit" class="form-label">Cantidad por Unidad</label>
+                <input type="text" class="form-control" id="QuantityPerUnit" name="QuantityPerUnit" placeholder="Ej. 24 botellas de 500ml">
+            </div>
+
+            <div class="col-md-6 mb-3">
+                <label for="UnitPrice" class="form-label">Precio Unitario ($)</label>
+                <input type="number" class="form-control" id="UnitPrice" name="UnitPrice" step="0.01" min="0">
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                <label for="UnitsInStock" class="form-label">Unidades en Stock</label>
+                <input type="number" class="form-control" id="UnitsInStock" name="UnitsInStock" min="0">
+            </div>
+
+            <div class="col-md-4 mb-3">
+                <label for="UnitsOnOrder" class="form-label">Unidades en Pedido</label>
+                <input type="number" class="form-control" id="UnitsOnOrder" name="UnitsOnOrder" min="0">
+            </div>
+
+            <div class="col-md-4 mb-3">
+                <label for="ReorderLevel" class="form-label">Nivel de Reorden</label>
+                <input type="number" class="form-control" id="ReorderLevel" name="ReorderLevel" min="0">
+            </div>
+        </div>
+
+        <div class="mb-4 form-check text-start">
+            <input type="checkbox" class="form-check-input" id="Discontinued" name="Discontinued" value="true">
+            <label class="form-check-label" for="Discontinued">Producto Descontinuado</label>
+        </div>
+
+        <div class="d-flex gap-2 mb-5">
+            <button type="submit" class="btn btn-primary">Guardar</button>
+            <button type="reset" class="btn btn-secondary">Limpiar</button>
+        </div>
+    </form>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+                const API_BASE_URL = "/api";
+                const form = document.querySelector('form');
+                const selectSupplier = document.getElementById('SupplierId');
+                const selectCategory = document.getElementById('CategoryId');
+
+                // Recuperamos el token de autorización guardado en la sesión
+                const token = localStorage.getItem("authToken");
+
+                window.onload = function () {
+                    cargarCategorias();
+                    cargarProveedores();
+                };
+
+                function cerrarSesion() {
+                    localStorage.removeItem("authToken");
+                    window.location.href = "login.html";
+                }
+
+                async function cargarCategorias() {
+                    try {
+                        const res = await fetch(`${API_BASE_URL}/Categories`, {
+                            headers: {
+                                'Authorization': `Bearer ${token}`
+                            }
+                        });
+                        if (res.ok) {
+                            const data = await res.json();
+                            data.forEach(cat => {
+                                const id = cat.categoryId ?? cat.id;
+                                const name = cat.categoryName ?? cat.name;
+                                selectCategory.innerHTML += `<option value="${id}">${name}</option>`;
+                            });
+                        } else if (res.status === 401) {
+                            cerrarSesion();
+                        }
+                    } catch (err) {
+                        console.error("Error cargando categorías:", err);
+                    }
+                }
+
+                async function cargarProveedores() {
+                    try {
+                        const res = await fetch(`${API_BASE_URL}/Suppliers`, {
+                            headers: {
+                                'Authorization': `Bearer ${token}`
+                            }
+                        });
+                        if (res.ok) {
+                            const data = await res.json();
+                            data.forEach(sup => {
+                                const id = sup.supplierId ?? sup.id;
+                                selectSupplier.innerHTML += `<option value="${id}">${sup.companyName}</option>`;
+                            });
+                        } else if (res.status === 401) {
+                            cerrarSesion();
+                        }
+                    } catch (err) {
+                        console.error("Error cargando proveedores:", err);
+                    }
+                }
+
+                form.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    form.classList.add('was-validated');
+
+                    if (!form.checkValidity()) return;
+
+                    const nuevoProducto = {
+                        productName: document.getElementById('ProductName').value,
+                        supplierId: document.getElementById('SupplierId').value ? parseInt(document.getElementById('SupplierId').value) : null,
+                        categoryId: document.getElementById('CategoryId').value ? parseInt(document.getElementById('CategoryId').value) : null,
+                        quantityPerUnit: document.getElementById('QuantityPerUnit').value || null,
+                        unitPrice: document.getElementById('UnitPrice').value ? parseFloat(document.getElementById('UnitPrice').value) : 0,
+                        unitsInStock: document.getElementById('UnitsInStock').value ? parseInt(document.getElementById('UnitsInStock').value) : 0,
+                        unitsOnOrder: document.getElementById('UnitsOnOrder').value ? parseInt(document.getElementById('UnitsOnOrder').value) : 0,
+                        reorderLevel: document.getElementById('ReorderLevel').value ? parseInt(document.getElementById('ReorderLevel').value) : 0,
+                        discontinued: document.getElementById('Discontinued').checked
+                    };
+
+                    try {
+                        const response = await fetch(`${API_BASE_URL}/Products`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${token}`
+                            },
+                            body: JSON.stringify(nuevoProducto)
+                        });
+
+                        if (response.ok) {
+                            const productoCreado = await response.json();
+                            alert(`¡Producto guardado exitosamente con ID: ${productoCreado.productId}!`);
+                            form.reset();
+                            form.classList.remove('was-validated');
+                        } else if (response.status === 401) {
+                            alert("Acceso denegado: Tu sesión expiró o no tienes autorización.");
+                            cerrarSesion();
+                        } else {
+                            alert("Ocurrió un error inesperado al guardar en el servidor.");
+                        }
+                    } catch (error) {
+                        alert("No se pudo establecer comunicación con la Web API.");
+                    }
+                });
+    </script>
+</body>
+</html>
