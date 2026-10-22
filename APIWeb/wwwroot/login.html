@@ -18,6 +18,9 @@
 
     <script>
                 // @ts-nocheck
+                // Utiliza la misma ruta base que configuraste en tu index.html
+                const API_BASE_URL = "api";
+
                 window.onload = function () {
                     google.accounts.id.initialize({
                         client_id: "184597401086-5c0amm2gmnid263jr8t2fjiv2ker9eer.apps.googleusercontent.com",
@@ -30,12 +33,33 @@
                     );
                 };
 
-                function handleCredentialResponse(response) {
-                    // Guardamos el Token JWT
-                    localStorage.setItem("authToken", response.credential);
+                async function handleCredentialResponse(response) {
+                    const token = response.credential;
 
-                    // Redirigimos al formulario de productos
-                    window.location.href = "index.html";
+                    // 1. Guardamos el Token JWT localmente
+                    localStorage.setItem("authToken", token);
+
+                    try {
+                        // 2. Enviamos el token al backend para registrar/actualizar al usuario en MySQL
+                        const res = await fetch(`${API_BASE_URL}/Auth/sincronizar`, {
+                            method: "POST",
+                            headers: {
+                                "Authorization": `Bearer ${token}`
+                            }
+                        });
+
+                        if (res.ok) {
+                            // 3. Redirigimos al formulario solo si la API validó y guardó al usuario
+                            window.location.href = "index.html";
+                        } else {
+                            alert("Error al validar el usuario con el servidor.");
+                            localStorage.removeItem("authToken");
+                        }
+                    } catch (error) {
+                        console.error("Error de conexión:", error);
+                        alert("No hay conexión con la Web API.");
+                        localStorage.removeItem("authToken");
+                    }
                 }
     </script>
 </body>

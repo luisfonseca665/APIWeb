@@ -1,54 +1,42 @@
 using Microsoft.EntityFrameworkCore;
 using APIWeb.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
-
 var builder = WebApplication.CreateBuilder(args);
 
-// 1. Configuración de la Base de Datos MySQL
+// Configuración de la Base de Datos
 builder.Services.AddDbContext<ContextoBD>(options =>
-    options.UseMySQL(builder.Configuration.GetConnectionString("ConexionMySQL")!));
+    options.UseMySQL(builder.Configuration.GetConnectionString("ConexionMySQL")));
 
-// 2. Obtener el ClientId desde secrets.json / appsettings.json o usar el tuyo como respaldo en IIS
-var googleClientId = builder.Configuration["Authentication:Google:ClientId"]
-                     ?? "184597401086-5c0amm2gmnid263jr8t2fjiv2ker9eer.apps.googleusercontent.com";
-
-// 3. Configurar validación de tokens JWT de Google
+// Configura la API para validar los tokens que envíe el cliente (Frontend/Postman) desde Google
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
         options.Authority = "https://accounts.google.com";
-        options.Audience = googleClientId;
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            // Acepta ambas variantes que Google suele enviar en el claim 'iss'
-            ValidIssuers = new[] { "https://accounts.google.com", "accounts.google.com" },
-            ValidateAudience = true,
-            ValidAudience = googleClientId,
-            ValidateLifetime = true
-        };
+        options.Audience = builder.Configuration["Authentication:Google:ClientId"]; // Lee automáticamente del secrets.json
     });
 
-builder.Services.AddAuthorization();
+// Add services to the container.
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+//// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll", policy =>
-    {
-        policy.AllowAnyOrigin()
-              .AllowAnyHeader()
-              .AllowAnyMethod();
-    });
+    options.AddPolicy("AllowAll",
+        policy =>
+        {
+            policy.AllowAnyOrigin()   // Peticiones desde cualquier origen
+                  .AllowAnyHeader()   // Cabeceras HTTP permitidas
+                  .AllowAnyMethod();  // GET, POST, PUT, DELETE
+        });
 });
 
 var app = builder.Build();
 
-// Habilitar Swagger también si quieres probar en el servidor, o dejarlo solo en Development
+// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
@@ -57,16 +45,14 @@ if (app.Environment.IsDevelopment())
 }
 
 // app.UseHttpsRedirection();
-
 app.UseCors("AllowAll");
-
-// Sirve automáticamente index.html al entrar a la raíz del dominio en IIS
-app.UseDefaultFiles();
 app.UseStaticFiles();
 
-app.UseAuthentication(); // Valida el token de Google
-app.UseAuthorization();  // Verifica el atributo [Authorize]
+
+app.UseAuthentication(); // <- Agregado: Valida quién es el usuario antes de verificar sus permisos
+app.UseAuthorization();  // <- Verifica a qué tiene derecho a acceder
 
 app.MapControllers();
 
 app.Run();
+

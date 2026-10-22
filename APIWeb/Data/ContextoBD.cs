@@ -27,6 +27,7 @@ public partial class ContextoBD : DbContext
     public virtual DbSet<Shipper> Shippers { get; set; }
 
     public virtual DbSet<Supplier> Suppliers { get; set; }
+    public DbSet<Usuario> Usuarios { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -252,6 +253,7 @@ public partial class ContextoBD : DbContext
 
         OnModelCreatingPartial(modelBuilder);
     }
+
 
     partial void OnModelCreatingPartial(ModelBuilder modelBuilder);
 }
