@@ -15,7 +15,6 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         options.Audience = builder.Configuration["Authentication:Google:ClientId"]; // Lee automáticamente del secrets.json
     });
 
-// Add services to the container.
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -36,7 +35,6 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
@@ -49,8 +47,8 @@ app.UseCors("AllowAll");
 app.UseStaticFiles();
 
 
-app.UseAuthentication(); // <- Agregado: Valida quién es el usuario antes de verificar sus permisos
-app.UseAuthorization();  // <- Verifica a qué tiene derecho a acceder
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapControllers();
 
