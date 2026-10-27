@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Directorio de Proveedores - APIWeb</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script>
+        // Si no hay token o ya expiró, regresamos al login
+        (function () {
+            const t = localStorage.getItem("authToken");
+            let valido = false;
+            try {
+                const payload = JSON.parse(atob(t.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
+                valido = payload.exp * 1000 > Date.now();
+            } catch { valido = false; }
+            if (!valido) {
+                localStorage.removeItem("authToken");
+                window.location.href = "login.html";
+            }
+        })();
+    </script>
+</head>
+<body>
+    <!-- Barra de navegación con todos los enlaces del sistema -->
+    <nav class="navbar navbar-dark bg-dark mb-4">
+        <div class="container-fluid">
+            <span class="navbar-brand mb-0 h1">Sistema de Productos</span>
+            <div>
+                <a href="productos.html" class="btn btn-outline-light btn-sm me-2">Inventario</a>
+                <a href="index.html" class="btn btn-outline-light btn-sm me-2">Nuevo Producto</a>
+                <a href="proveedores.html" class="btn btn-warning btn-sm me-2 fw-semibold">Proveedores & Catálogo</a>
+                <button class="btn btn-outline-danger btn-sm" onclick="cerrarSesion()">Cerrar Sesión</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mb-5">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+                <h2 class="mb-1">Directorio de Proveedores</h2>
+                <p class="text-muted mb-0">Consulta personalizada: Proveedores, volumen de productos y catálogo detallado.</p>
+            </div>
+            <button class="btn btn-outline-primary btn-sm" onclick="cargarProveedores()">🔄 Actualizar</button>
+        </div>
+
+        <!-- Tarjetas de resumen estadístico -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-4">
+                <div class="card text-bg-primary shadow-sm">
+                    <div class="card-body">
+                        <h6 class="card-title text-uppercase opacity-75 small">Total Proveedores</h6>
+                        <h3 class="card-text fw-bold" id="statProveedores">0</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card text-bg-success shadow-sm">
+                    <div class="card-body">
+                        <h6 class="card-title text-uppercase opacity-75 small">Total Productos Suministrados</h6>
+                        <h3 class="card-text fw-bold" id="statProductos">0</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card text-bg-dark shadow-sm">
+                    <div class="card-body">
+                        <h6 class="card-title text-uppercase opacity-75 small">Valor Total en Catálogo</h6>
+                        <h3 class="card-text fw-bold" id="statValor">$0.00</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Acordeón Master-Detail de Proveedores -->
+        <div class="accordion shadow-sm" id="accordionProveedores">
+            <div class="text-center py-5" id="cargando">
+                <div class="spinner-border text-primary" role="status"></div>
+                <p class="mt-2 text-muted">Cargando directorio de proveedores...</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // @ts-nocheck
+        const API_BASE_URL = "/api";
+        const token = localStorage.getItem("authToken");
+
+        window.onload = cargarProveedores;
+
+        function cerrarSesion() {
+            localStorage.removeItem("authToken");
+            localStorage.removeItem("authUsuario");
+            window.location.href = "login.html";
+        }
+
+        async function cargarProveedores() {
+            const contenedor = document.getElementById("accordionProveedores");
+            try {
+                const res = await fetch(`${API_BASE_URL}/Suppliers/con-productos`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (res.status === 401) {
+                    alert("Tu sesión expiró.");
+                    cerrarSesion();
+                    return;
+                }
+
+                if (!res.ok) {
+                    contenedor.innerHTML = `<div class="alert alert-danger m-3">Error al consultar los proveedores.</div>`;
+                    return;
+                }
+
+                const proveedores = await res.json();
+
+                // Calcular estadísticas generales
+                let totalProds = 0;
+                let totalValor = 0;
+                proveedores.forEach(p => {
+                    totalProds += p.totalProductos;
+                    totalValor += p.valorInventario;
+                });
+
+                document.getElementById("statProveedores").textContent = proveedores.length;
+                document.getElementById("statProductos").textContent = totalProds;
+                document.getElementById("statValor").textContent = `$${totalValor.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+                contenedor.innerHTML = "";
+
+                if (proveedores.length === 0) {
+                    contenedor.innerHTML = `<div class="alert alert-info m-3">No hay proveedores registrados.</div>`;
+                    return;
+                }
+
+                proveedores.forEach((p, index) => {
+                    const collapseId = `collapse_${p.supplierId}`;
+                    const headingId = `heading_${p.supplierId}`;
+                    const valorFormateado = p.valorInventario.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+                    // Filas de los productos de este proveedor
+                    let filasProductos = "";
+                    if (p.productos && p.productos.length > 0) {
+                        p.productos.forEach(prod => {
+                            const badgeDescont = prod.discontinued 
+                                ? '<span class="badge bg-danger">Descontinuado</span>' 
+                                : '<span class="badge bg-success">Activo</span>';
+                            filasProductos += `
+                                <tr>
+                                    <td>#${prod.productId}</td>
+                                    <td class="fw-semibold">${prod.productName}</td>
+                                    <td><span class="badge bg-secondary">${prod.categoryName || 'N/A'}</span></td>
+                                    <td>$${(prod.unitPrice ?? 0).toFixed(2)}</td>
+                                    <td>${prod.unitsInStock ?? 0} u.</td>
+                                    <td>${badgeDescont}</td>
+                                    <td class="text-end">
+                                        <a href="editar_producto.html?id=${prod.productId}" class="btn btn-sm btn-outline-warning">Editar</a>
+                                    </td>
+                                </tr>
+                            `;
+                        });
+                    } else {
+                        filasProductos = `<tr><td colspan="7" class="text-center text-muted py-3">Este proveedor no tiene productos asignados actualmente.</td></tr>`;
+                    }
+
+                    contenedor.innerHTML += `
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="${headingId}">
+                                <button class="accordion-button ${index === 0 ? '' : 'collapsed'}" type="button" 
+                                        data-bs-toggle="collapse" data-bs-target="#${collapseId}">
+                                    <div class="d-flex justify-content-between align-items-center w-100 me-3 flex-wrap">
+                                        <div>
+                                            <strong class="fs-5">${p.companyName}</strong>
+                                            <span class="text-muted ms-2 small">📍 ${p.city || 'Sin ciudad'}, ${p.country || 'Sin país'}</span>
+                                        </div>
+                                        <div class="mt-2 mt-md-0">
+                                            <span class="badge bg-primary rounded-pill me-2">${p.totalProductos} productos</span>
+                                            <span class="badge bg-dark rounded-pill">Valor catálogo: $${valorFormateado}</span>
+                                        </div>
+                                    </div>
+                                </button>
+                            </h2>
+                            <div id="${collapseId}" class="accordion-collapse collapse ${index === 0 ? 'show' : ''}" 
+                                 data-bs-parent="#accordionProveedores">
+                                <div class="accordion-body bg-light">
+                                    <div class="row g-2 mb-3 small text-muted">
+                                        <div class="col-md-4"><strong>Contacto:</strong> ${p.contactName || 'N/D'} (${p.contactTitle || 'N/D'})</div>
+                                        <div class="col-md-4"><strong>Teléfono:</strong> ${p.phone || 'N/D'}</div>
+                                        <div class="col-md-4"><strong>ID Proveedor:</strong> #${p.supplierId}</div>
+                                    </div>
+
+                                    <h6 class="fw-bold mb-2">Catálogo de Productos Suministrados:</h6>
+                                    <div class="table-responsive bg-white rounded shadow-sm">
+                                        <table class="table table-sm table-hover mb-0 align-middle">
+                                            <thead class="table-secondary">
+                                                <tr>
+                                                    <th>ID</th>
+                                                    <th>Producto</th>
+                                                    <th>Categoría</th>
+                                                    <th>Precio</th>
+                                                    <th>Stock</th>
+                                                    <th>Estado</th>
+                                                    <th class="text-end">Acción</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                ${filasProductos}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+
+            } catch (err) {
+                console.error("Error al cargar proveedores:", err);
+                contenedor.innerHTML = `<div class="alert alert-danger m-3">No se pudo conectar con el servidor.</div>`;
+            }
+        }
+    </script>
+</body>
+</html>

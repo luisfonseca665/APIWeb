@@ -27,7 +27,11 @@ Authorization: Bearer {{token}}
 ### 4. GET productos (público)
 GET {{APIWeb_HostAddress}}/api/Products
 
-### 5. Borrar producto SIN token (debe responder 401)
+### 5. GET proveedores con catálogo completo (CONSULTA PERSONALIZADA - Requiere JWT)
+GET {{APIWeb_HostAddress}}/api/Suppliers/con-productos
+Authorization: Bearer {{token}}
+
+### 6. Borrar producto SIN token (debe responder 401)
 DELETE {{APIWeb_HostAddress}}/api/Products/9999
 
 ### 6. Borrar producto CON token
