@@ -29,7 +29,7 @@
             <div>
                 <a href="productos.html" class="btn btn-outline-light btn-sm me-2">Inventario</a>
                 <a href="index.html" class="btn btn-outline-light btn-sm me-2">Nuevo Producto</a>
-                <a href="proveedores.html" class="btn btn-warning btn-sm me-2 fw-semibold">Proveedores & Catálogo</a>
+                <a href="proveedores.html" class="btn btn-warning btn-sm me-2 fw-semibold">Proveedores y Catálogo</a>
                 <button class="btn btn-outline-danger btn-sm" onclick="cerrarSesion()">Cerrar Sesión</button>
             </div>
         </div>
@@ -41,7 +41,10 @@
                 <h2 class="mb-1">Directorio de Proveedores</h2>
                 <p class="text-muted mb-0">Consulta personalizada: Proveedores, volumen de productos y catálogo detallado.</p>
             </div>
-            <button class="btn btn-outline-primary btn-sm" onclick="cargarProveedores()">🔄 Actualizar</button>
+            <button id="btnActualizar" class="btn btn-primary btn-sm" onclick="recargarDatos()">
+                <span id="btnActualizarSpinner" class="spinner-border spinner-border-sm d-none me-1" role="status"></span>
+                <span id="btnActualizarTexto">Actualizar</span>
+            </button>
         </div>
 
         <!-- Tarjetas de resumen estadístico -->
@@ -95,6 +98,22 @@
             window.location.href = "login.html";
         }
 
+        async function recargarDatos() {
+            const btn = document.getElementById("btnActualizar");
+            const spinner = document.getElementById("btnActualizarSpinner");
+            const texto = document.getElementById("btnActualizarTexto");
+
+            btn.disabled = true;
+            spinner.classList.remove("d-none");
+            texto.textContent = "Actualizando...";
+
+            await cargarProveedores();
+
+            spinner.classList.add("d-none");
+            texto.textContent = "Actualizar";
+            btn.disabled = false;
+        }
+
         async function cargarProveedores() {
             const contenedor = document.getElementById("accordionProveedores");
             try {
@@ -139,6 +158,9 @@
                     const headingId = `heading_${p.supplierId}`;
                     const valorFormateado = p.valorInventario.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
+                    // Ubicación limpia sin emojis
+                    const ubicacion = [p.city, p.country].filter(Boolean).join(", ") || "Sin ubicación";
+
                     // Filas de los productos de este proveedor
                     let filasProductos = "";
                     if (p.productos && p.productos.length > 0) {
@@ -172,7 +194,7 @@
                                     <div class="d-flex justify-content-between align-items-center w-100 me-3 flex-wrap">
                                         <div>
                                             <strong class="fs-5">${p.companyName}</strong>
-                                            <span class="text-muted ms-2 small">📍 ${p.city || 'Sin ciudad'}, ${p.country || 'Sin país'}</span>
+                                            <span class="text-muted ms-2 small">(${ubicacion})</span>
                                         </div>
                                         <div class="mt-2 mt-md-0">
                                             <span class="badge bg-primary rounded-pill me-2">${p.totalProductos} productos</span>
