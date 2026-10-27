@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using APIWeb.Models;
 using Microsoft.EntityFrameworkCore;
@@ -249,6 +249,12 @@ public partial class ContextoBD : DbContext
             entity.Property(e => e.Phone).HasMaxLength(24);
             entity.Property(e => e.PostalCode).HasMaxLength(10);
             entity.Property(e => e.Region).HasMaxLength(15);
+        });
+
+        modelBuilder.Entity<Usuario>(entity =>
+        {
+            entity.ToTable("Usuarios");
+            entity.HasIndex(e => e.Email).IsUnique();
         });
 
         OnModelCreatingPartial(modelBuilder);

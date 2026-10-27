@@ -1,6 +1,35 @@
 @APIWeb_HostAddress = http://localhost:5023
 
-GET {{APIWeb_HostAddress}}/weatherforecast/
-Accept: application/json
+### 1. Registrar usuario
+POST {{APIWeb_HostAddress}}/api/Auth/registro
+Content-Type: application/json
 
-###
+{
+  "nombre": "Usuario Prueba",
+  "email": "prueba@correo.com",
+  "password": "123456"
+}
+
+### 2. Login (copia el "token" de la respuesta)
+POST {{APIWeb_HostAddress}}/api/Auth/login
+Content-Type: application/json
+
+{
+  "email": "prueba@correo.com",
+  "password": "123456"
+}
+
+### 3. Perfil (requiere token)
+@token = PEGA_AQUI_EL_TOKEN
+GET {{APIWeb_HostAddress}}/api/Auth/perfil
+Authorization: Bearer {{token}}
+
+### 4. GET productos (público)
+GET {{APIWeb_HostAddress}}/api/Products
+
+### 5. Borrar producto SIN token (debe responder 401)
+DELETE {{APIWeb_HostAddress}}/api/Products/9999
+
+### 6. Borrar producto CON token
+DELETE {{APIWeb_HostAddress}}/api/Products/9999
+Authorization: Bearer {{token}}
