@@ -44,7 +44,6 @@ namespace APIWeb.Controllers
                 UltimoAcceso = DateTime.UtcNow
             };
 
-            // Nunca guardamos la contraseña en texto plano, solo su versión encriptada (hash)
             usuario.PasswordHash = _hasher.HashPassword(usuario, dto.Password);
 
             _context.Usuarios.Add(usuario);
@@ -62,7 +61,6 @@ namespace APIWeb.Controllers
             var email = dto.Email.Trim().ToLower();
             var usuario = await _context.Usuarios.FirstOrDefaultAsync(u => u.Email == email);
 
-            // Por seguridad usamos una respuesta genérica tanto si el correo no existe como si la contraseña está mal
             if (usuario == null ||
                 _hasher.VerifyHashedPassword(usuario, usuario.PasswordHash, dto.Password) == PasswordVerificationResult.Failed)
             {
