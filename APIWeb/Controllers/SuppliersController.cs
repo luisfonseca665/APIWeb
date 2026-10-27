@@ -20,15 +20,15 @@ namespace APIWeb.Controllers
             _context = context;
         }
 
-        // GET: api/Suppliers (público)
+        // Listado simple de proveedores para llenar selectores en los formularios
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Supplier>>> GetSuppliers()
         {
             return await _context.Suppliers.ToListAsync();
         }
 
-        // GET: api/Suppliers/con-productos (Consulta personalizada protegida con JWT)
-        // Master-Detail: Trae los proveedores con sus productos asociados y cálculo de inventario
+        // Consulta personalizada (requiere login): cruza cada proveedor con sus productos,
+        // calcula el valor estimado del catálogo y los ordena por volumen de artículos suministrados
         [HttpGet("con-productos")]
         [Authorize]
         public async Task<ActionResult<IEnumerable<ProveedorConProductosDto>>> GetProveedoresConProductos()

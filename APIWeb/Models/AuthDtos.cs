@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace APIWeb.Models
 {
-    // Datos que envía el cliente para crear una cuenta
+    // Modelo para recibir los datos de registro desde el formulario o Postman
     public class RegistroDto
     {
         [Required(ErrorMessage = "El nombre es obligatorio")]
@@ -11,7 +11,7 @@ namespace APIWeb.Models
         public string Nombre { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "El correo es obligatorio")]
-        [EmailAddress(ErrorMessage = "Correo no válido")]
+        [EmailAddress(ErrorMessage = "El formato de correo no es válido")]
         [MaxLength(150)]
         public string Email { get; set; } = string.Empty;
 
@@ -20,18 +20,18 @@ namespace APIWeb.Models
         public string Password { get; set; } = string.Empty;
     }
 
-    // Datos que envía el cliente para iniciar sesión
+    // Modelo para recibir las credenciales de inicio de sesión
     public class LoginDto
     {
         [Required(ErrorMessage = "El correo es obligatorio")]
-        [EmailAddress(ErrorMessage = "Correo no válido")]
+        [EmailAddress(ErrorMessage = "El formato de correo no es válido")]
         public string Email { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "La contraseña es obligatoria")]
         public string Password { get; set; } = string.Empty;
     }
 
-    // Respuesta que devuelve la API cuando el login es correcto
+    // Estructura de la respuesta enviada al cliente tras un inicio de sesión exitoso
     public class TokenRespuestaDto
     {
         public string Token { get; set; } = string.Empty;

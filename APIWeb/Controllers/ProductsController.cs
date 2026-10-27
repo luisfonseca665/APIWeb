@@ -22,14 +22,13 @@ namespace APIWeb.Controllers
             _context = context;
         }
 
-        // GET: api/Products
+        // Consultas de productos (públicas para consultar el catálogo)
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Product>>> GetProducts()
         {
             return await _context.Products.ToListAsync();
         }
 
-        // GET: api/Products/5
         [HttpGet("{id}")]
         public async Task<ActionResult<Product>> GetProduct(int id)
         {
@@ -43,8 +42,7 @@ namespace APIWeb.Controllers
             return product;
         }
 
-        // PUT: api/Products/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+        // Modificar producto (requiere autenticación)
         [HttpPut("{id}")]
         [Authorize]
         public async Task<IActionResult> PutProduct(int id, Product product)
@@ -75,8 +73,7 @@ namespace APIWeb.Controllers
             return NoContent();
         }
 
-        // POST: api/Products
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+        // Crear producto (requiere autenticación)
         [HttpPost]
         [Authorize]
         public async Task<ActionResult<Product>> PostProduct(Product product)
@@ -87,7 +84,7 @@ namespace APIWeb.Controllers
             return CreatedAtAction("GetProduct", new { id = product.ProductId }, product);
         }
 
-        // DELETE: api/Products/5
+        // Eliminar producto (requiere autenticación)
         [HttpDelete("{id}")]
         [Authorize]
         public async Task<IActionResult> DeleteProduct(int id)

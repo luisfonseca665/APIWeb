@@ -3,6 +3,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace APIWeb.Models
 {
+    // Representa la tabla Usuarios en MySQL para almacenar cuentas del sistema
     public class Usuario
     {
         [Key]
@@ -11,12 +12,12 @@ namespace APIWeb.Models
         [MaxLength(150)]
         public string Nombre { get; set; } = string.Empty;
 
-        // El correo es el "usuario" con el que se inicia sesión (debe ser único)
+        // Correo electrónico utilizado para iniciar sesión
         [Required]
         [MaxLength(150)]
         public string Email { get; set; } = string.Empty;
 
-        // Nunca se guarda la contraseña en texto plano, solo su hash
+        // Contraseña cifrada con algoritmo seguro (nunca en texto plano)
         [Required]
         [MaxLength(255)]
         public string PasswordHash { get; set; } = string.Empty;

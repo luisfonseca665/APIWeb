@@ -32,57 +32,55 @@
     </div>
 
     <script>
-                // @ts-nocheck
-                const API_BASE_URL = "api";
-                const form = document.getElementById("formLogin");
-                const alerta = document.getElementById("alerta");
-                const btn = document.getElementById("btnLogin");
+        const API_BASE_URL = "api";
+        const form = document.getElementById("formLogin");
+        const alerta = document.getElementById("alerta");
+        const btn = document.getElementById("btnLogin");
 
-                function mostrarError(msg) {
-                    alerta.textContent = msg;
-                    alerta.classList.remove("d-none");
-                }
+        function mostrarError(msg) {
+            alerta.textContent = msg;
+            alerta.classList.remove("d-none");
+        }
 
-                form.addEventListener("submit", async (e) => {
-                    e.preventDefault();
-                    alerta.classList.add("d-none");
-                    form.classList.add("was-validated");
-                    if (!form.checkValidity()) return;
+        form.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            alerta.classList.add("d-none");
+            form.classList.add("was-validated");
+            if (!form.checkValidity()) return;
 
-                    btn.disabled = true;
-                    btn.textContent = "Validando...";
+            btn.disabled = true;
+            btn.textContent = "Validando...";
 
-                    try {
-                        // 1. Enviamos las credenciales a NUESTRA API para obtener el JWT
-                        const res = await fetch(`${API_BASE_URL}/Auth/login`, {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({
-                                email: document.getElementById("Email").value,
-                                password: document.getElementById("Password").value
-                            })
-                        });
-
-                        if (res.ok) {
-                            const data = await res.json();
-                            // 2. Guardamos el Token JWT localmente (misma clave que usan las demás páginas)
-                            localStorage.setItem("authToken", data.token);
-                            localStorage.setItem("authUsuario", data.nombre);
-                            // 3. Redirigimos al formulario
-                            window.location.href = "index.html";
-                        } else if (res.status === 401) {
-                            mostrarError("Correo o contraseña incorrectos.");
-                        } else {
-                            mostrarError("Error al validar el usuario con el servidor.");
-                        }
-                    } catch (error) {
-                        console.error("Error de conexión:", error);
-                        mostrarError("No hay conexión con la Web API.");
-                    } finally {
-                        btn.disabled = false;
-                        btn.textContent = "Iniciar sesión";
-                    }
+            try {
+                // Solicitamos el token a la API enviando las credenciales ingresadas
+                const res = await fetch(`${API_BASE_URL}/Auth/login`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        email: document.getElementById("Email").value,
+                        password: document.getElementById("Password").value
+                    })
                 });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    // Guardamos el token en el navegador para autorizar las siguientes pantallas
+                    localStorage.setItem("authToken", data.token);
+                    localStorage.setItem("authUsuario", data.nombre);
+                    window.location.href = "index.html";
+                } else if (res.status === 401) {
+                    mostrarError("Correo o contraseña incorrectos.");
+                } else {
+                    mostrarError("Error al validar el usuario con el servidor.");
+                }
+            } catch (error) {
+                console.error("Error de conexión:", error);
+                mostrarError("No hay conexión con la Web API.");
+            } finally {
+                btn.disabled = false;
+                btn.textContent = "Iniciar sesión";
+            }
+        });
     </script>
 </body>
 </html>

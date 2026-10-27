@@ -42,60 +42,60 @@
     </div>
 
     <script>
-                // @ts-nocheck
-                const API_BASE_URL = "api";
-                const form = document.getElementById("formRegistro");
-                const alerta = document.getElementById("alerta");
-                const btn = document.getElementById("btnRegistro");
-                const pass = document.getElementById("Password");
-                const confirmar = document.getElementById("Confirmar");
+        const API_BASE_URL = "api";
+        const form = document.getElementById("formRegistro");
+        const alerta = document.getElementById("alerta");
+        const btn = document.getElementById("btnRegistro");
+        const pass = document.getElementById("Password");
+        const confirmar = document.getElementById("Confirmar");
 
-                function mostrarAlerta(msg, tipo) {
-                    alerta.className = `alert alert-${tipo} py-2`;
-                    alerta.textContent = msg;
+        function mostrarAlerta(msg, tipo) {
+            alerta.className = `alert alert-${tipo} py-2`;
+            alerta.textContent = msg;
+        }
+
+        // Valida que ambas contraseñas coincidan antes de enviar
+        confirmar.addEventListener("input", () => {
+            confirmar.setCustomValidity(confirmar.value !== pass.value ? "No coinciden" : "");
+        });
+
+        form.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            confirmar.setCustomValidity(confirmar.value !== pass.value ? "No coinciden" : "");
+            form.classList.add("was-validated");
+            if (!form.checkValidity()) return;
+
+            btn.disabled = true;
+            btn.textContent = "Registrando...";
+
+            try {
+                // Envía los datos a la API para crear la cuenta y guardar la contraseña cifrada
+                const res = await fetch(`${API_BASE_URL}/Auth/registro`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        nombre: document.getElementById("Nombre").value,
+                        email: document.getElementById("Email").value,
+                        password: pass.value
+                    })
+                });
+
+                if (res.ok) {
+                    mostrarAlerta("¡Cuenta creada con éxito! Redirigiendo...", "success");
+                    setTimeout(() => window.location.href = "login.html", 1500);
+                    return;
+                } else if (res.status === 409) {
+                    mostrarAlerta("Ya existe una cuenta con ese correo.", "warning");
+                } else {
+                    mostrarAlerta("No se pudo registrar la cuenta. Revisa los datos.", "danger");
                 }
-
-                // Validación de que ambas contraseñas coincidan
-                confirmar.addEventListener("input", () => {
-                    confirmar.setCustomValidity(confirmar.value !== pass.value ? "No coinciden" : "");
-                });
-
-                form.addEventListener("submit", async (e) => {
-                    e.preventDefault();
-                    confirmar.setCustomValidity(confirmar.value !== pass.value ? "No coinciden" : "");
-                    form.classList.add("was-validated");
-                    if (!form.checkValidity()) return;
-
-                    btn.disabled = true;
-                    btn.textContent = "Registrando...";
-
-                    try {
-                        const res = await fetch(`${API_BASE_URL}/Auth/registro`, {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({
-                                nombre: document.getElementById("Nombre").value,
-                                email: document.getElementById("Email").value,
-                                password: pass.value
-                            })
-                        });
-
-                        if (res.ok) {
-                            mostrarAlerta("¡Cuenta creada! Redirigiendo al inicio de sesión...", "success");
-                            setTimeout(() => window.location.href = "login.html", 1500);
-                            return;
-                        } else if (res.status === 409) {
-                            mostrarAlerta("Ya existe una cuenta con ese correo.", "warning");
-                        } else {
-                            mostrarAlerta("No se pudo registrar el usuario. Revisa los datos.", "danger");
-                        }
-                    } catch (error) {
-                        console.error("Error de conexión:", error);
-                        mostrarAlerta("No hay conexión con la Web API.", "danger");
-                    }
-                    btn.disabled = false;
-                    btn.textContent = "Registrarme";
-                });
+            } catch (error) {
+                console.error("Error de conexión:", error);
+                mostrarAlerta("No hay conexión con la Web API.", "danger");
+            }
+            btn.disabled = false;
+            btn.textContent = "Registrarme";
+        });
     </script>
 </body>
 </html>

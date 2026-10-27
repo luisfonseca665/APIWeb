@@ -8,9 +8,7 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace APIWeb.Services
 {
-    /// <summary>
-    /// Genera los JWT firmados por NUESTRA API (antes los firmaba Google).
-    /// </summary>
+    // Clase encargada de armar y firmar el token cuando un usuario inicia sesión
     public class TokenService
     {
         private readonly IConfiguration _config;
@@ -22,13 +20,14 @@ namespace APIWeb.Services
 
         public (string token, DateTime expira) GenerarToken(Usuario usuario)
         {
+            // Tomamos la clave secreta configurada en appsettings para firmar digitalmente el token
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]!));
             var credenciales = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
             var minutos = int.TryParse(_config["Jwt:ExpiraMinutos"], out var m) ? m : 60;
             var expira = DateTime.UtcNow.AddMinutes(minutos);
 
-            // Claims = datos del usuario que viajan dentro del token
+            // Guardamos la información básica del usuario dentro del token para reconocerlo en cada petición
             var claims = new List<Claim>
             {
                 new(JwtRegisteredClaimNames.Sub, usuario.Id.ToString()),

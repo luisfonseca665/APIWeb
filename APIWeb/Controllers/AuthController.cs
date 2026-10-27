@@ -23,14 +23,14 @@ namespace APIWeb.Controllers
             _hasher = hasher;
         }
 
-        // POST: api/Auth/registro
-        // Crea una cuenta nueva guardando la contraseña hasheada
+        // Registro de nuevos usuarios: encripta la contraseña antes de guardarla en MySQL
         [HttpPost("registro")]
         [AllowAnonymous]
         public async Task<IActionResult> Registro(RegistroDto dto)
         {
             var email = dto.Email.Trim().ToLower();
 
+            // Evitamos duplicar correos
             if (await _context.Usuarios.AnyAsync(u => u.Email == email))
             {
                 return Conflict(new { mensaje = "Ya existe una cuenta con ese correo" });
@@ -43,17 +43,18 @@ namespace APIWeb.Controllers
                 FechaRegistro = DateTime.UtcNow,
                 UltimoAcceso = DateTime.UtcNow
             };
+
+            // Nunca guardamos la contraseña en texto plano, solo su versión encriptada (hash)
             usuario.PasswordHash = _hasher.HashPassword(usuario, dto.Password);
 
             _context.Usuarios.Add(usuario);
             await _context.SaveChangesAsync();
 
             return StatusCode(StatusCodes.Status201Created,
-                new { mensaje = "Usuario registrado", usuario.Id, usuario.Nombre, usuario.Email });
+                new { mensaje = "Usuario registrado correctamente", usuario.Id, usuario.Nombre, usuario.Email });
         }
 
-        // POST: api/Auth/login
-        // Valida credenciales y devuelve el JWT
+        // Inicio de sesión: valida correo y contraseña, y si todo coincide entrega el token JWT
         [HttpPost("login")]
         [AllowAnonymous]
         public async Task<ActionResult<TokenRespuestaDto>> Login(LoginDto dto)
@@ -61,7 +62,7 @@ namespace APIWeb.Controllers
             var email = dto.Email.Trim().ToLower();
             var usuario = await _context.Usuarios.FirstOrDefaultAsync(u => u.Email == email);
 
-            // Mismo mensaje para "no existe" y "contraseña mal" para no revelar qué correos existen
+            // Por seguridad usamos una respuesta genérica tanto si el correo no existe como si la contraseña está mal
             if (usuario == null ||
                 _hasher.VerifyHashedPassword(usuario, usuario.PasswordHash, dto.Password) == PasswordVerificationResult.Failed)
             {
@@ -83,8 +84,7 @@ namespace APIWeb.Controllers
             });
         }
 
-        // GET: api/Auth/perfil
-        // Devuelve los datos del usuario a partir del token (sirve para probar que el JWT funciona)
+        // Endpoint para verificar que el token recibido es válido y extraer los datos del usuario conectado
         [HttpGet("perfil")]
         [Authorize]
         public IActionResult Perfil()

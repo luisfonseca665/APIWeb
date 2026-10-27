@@ -2,7 +2,7 @@ using System.Collections.Generic;
 
 namespace APIWeb.Models
 {
-    // Datos del producto resumidos para mostrar dentro del proveedor
+    // Detalle simplificado de un producto para la vista de proveedores
     public class ProductoResumenDto
     {
         public int ProductId { get; set; }
@@ -13,7 +13,7 @@ namespace APIWeb.Models
         public bool? Discontinued { get; set; }
     }
 
-    // Consulta personalizada Master-Detail: Proveedor + Estadísticas + Lista de Productos
+    // Datos del proveedor junto con sus estadísticas y la lista de artículos que surte
     public class ProveedorConProductosDto
     {
         public int SupplierId { get; set; }
@@ -24,7 +24,7 @@ namespace APIWeb.Models
         public string? Country { get; set; }
         public string? Phone { get; set; }
         public int TotalProductos { get; set; }
-        public decimal ValorInventario { get; set; } // Suma estimada de su catálogo
+        public decimal ValorInventario { get; set; }
         public List<ProductoResumenDto> Productos { get; set; } = new();
     }
 }
